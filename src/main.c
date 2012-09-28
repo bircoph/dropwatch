@@ -58,9 +58,16 @@ struct netlink_message {
 	void (*ack_cb)(struct netlink_message *amsg, struct netlink_message *msg, int err);
 };
 
+struct filter_entry {
+	LIST_ENTRY(filter_entry) filter_element;
+	void *location;
+};
+
 LIST_HEAD(ack_list, netlink_message);
+LIST_HEAD(filter_list, filter_entry);
 
 struct ack_list ack_list_head = {NULL};
+struct filter_list filter_list_head = {NULL};
 
 unsigned long alimit = 0;
 unsigned long acount = 0;
@@ -309,6 +316,17 @@ void process_rx_message(void)
 }
 
 
+int is_location_filtered(void *location)
+{
+	struct filter_entry *fe;
+
+	LIST_FOREACH(fe, &filter_list_head, filter_element) {	
+		if (fe->location == location)
+			return 1;
+	}
+
+	return 0;
+}
 
 /*
  * These are the received message handlers
@@ -329,6 +347,8 @@ void handle_dm_alert_msg(struct netlink_message *msg, int err)
 	for (i=0; i < alert->entries; i++) {
 		void *location;
 		memcpy(&location, alert->points[i].pc, sizeof(void *));
+		if (is_location_filtered(location))
+			continue;
 		if (lookup_symbol(location, &res))
 			printf ("%d drops at location %p\n", alert->points[i].count, location);
 		else
@@ -425,6 +445,26 @@ void display_help()
 	printf("stop\t\t\t\t - stop capture\n");
 }
 
+void add_filter(void *location)
+{
+	struct filter_entry *fe;
+
+	LIST_FOREACH(fe, &filter_list_head, filter_element) {
+		if (fe->location == location)
+			return;
+	}
+
+	fe = malloc(sizeof(struct filter_entry));
+	if (!fe) {
+		printf("Unable to allocate new filter entry\n");
+		return;
+	}
+
+	fe->location = location;
+	LIST_INSERT_HEAD(&filter_list_head, fe, filter_element);
+	printf("Added new location filter %p\n", fe->location);
+}
+
 void enter_command_line_mode()
 {
 	char *input;
@@ -456,6 +496,19 @@ void enter_command_line_mode()
 
 		if (!strcmp (input, "help")) {
 			display_help();
+			goto next_input;
+		}
+
+		if (!strncmp(input, "filter", 6)) {
+			unsigned long long locval;
+			void *location;
+			if (sscanf(input+7, "%llx", &locval) < 1) {
+				printf("Filter intput failure\n");
+				printf("Format is: filter 0x<address>\n");
+				goto next_input;
+			}
+			location = (void *)locval;
+			add_filter(location);
 			goto next_input;
 		}
 
