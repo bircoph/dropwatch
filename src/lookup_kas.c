@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/utsname.h>
-#include <bfd.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -33,6 +32,7 @@
 #include <sys/queue.h>
 
 #include "lookup.h"
+#include <bfd.h>
 
 struct symbol_entry {
 	char *sym_name;

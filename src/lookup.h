@@ -28,6 +28,9 @@
 #include <stdlib.h>
 #include <asm/types.h>
 
+// satisfy PR 14072 in bfd.h
+#define PACKAGE 1
+#define PACKAGE_VERSION 1
 
 /*
  * Initalization routine

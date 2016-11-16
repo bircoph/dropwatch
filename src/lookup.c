@@ -27,13 +27,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/utsname.h>
-#include <bfd.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
 #include "lookup.h"
+#include <bfd.h>
 
 extern struct lookup_methods bfd_methods;
 extern struct lookup_methods kallsym_methods;
